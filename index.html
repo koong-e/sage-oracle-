@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAGE — 현자의 조언</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Noto+Serif+KR:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #7a5f28;
+    --deep: #0a0608;
+    --dark: #110d0f;
+    --mist: rgba(201,168,76,0.08);
+  }
+
+  body {
+    background: var(--deep);
+    color: var(--gold);
+    font-family: 'Crimson Text', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* 배경 파티클 효과 */
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* 상단 장식 */
+  .top-ornament {
+    text-align: center;
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards 0.5s;
+  }
+
+  .top-ornament svg {
+    width: 200px;
+    height: 40px;
+  }
+
+  /* 타이틀 */
+  .title-wrap {
+    text-align: center;
+    margin-bottom: 6px;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards 1s;
+  }
+
+  .title-sage {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(48px, 12vw, 80px);
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-shadow:
+      0 0 20px rgba(201,168,76,0.6),
+      0 0 60px rgba(201,168,76,0.3),
+      0 0 100px rgba(201,168,76,0.1);
+    line-height: 1;
+  }
+
+  .title-sub {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11px;
+    letter-spacing: 0.5em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* 구분선 */
+  .divider {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards 1.5s;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .divider-gem {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    box-shadow: 0 0 10px var(--gold);
+  }
+
+  /* 초대 문구 */
+  .invite-text {
+    text-align: center;
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(13px, 3.5vw, 16px);
+    color: rgba(201,168,76,0.7);
+    line-height: 2;
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards 2s;
+  }
+
+  .invite-text em {
+    color: var(--gold-light);
+    font-style: italic;
+  }
+
+  /* 현자 선택 */
+  .sages-label {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    margin-bottom: 14px;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 2.3s;
+  }
+
+  .sages-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 2.5s;
+  }
+
+  .sage-chip {
+    padding: 5px 14px;
+    border: 1px solid var(--gold-dim);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11px;
+    color: var(--gold-dim);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+    background: transparent;
+  }
+
+  .sage-chip:hover, .sage-chip.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--mist);
+    box-shadow: 0 0 12px rgba(201,168,76,0.2);
+  }
+
+  /* 입력 영역 */
+  .input-wrap {
+    width: 100%;
+    position: relative;
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 2.8s;
+  }
+
+  .input-border {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--gold-dim);
+    pointer-events: none;
+    transition: all 0.3s;
+  }
+
+  .input-border::before, .input-border::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 10px;
+    border-color: var(--gold);
+  }
+
+  .input-border::before {
+    top: -1px; left: -1px;
+    border-top: 2px solid; border-left: 2px solid;
+  }
+
+  .input-border::after {
+    bottom: -1px; right: -1px;
+    border-bottom: 2px solid; border-right: 2px solid;
+  }
+
+  textarea {
+    width: 100%;
+    background: rgba(10,6,8,0.8);
+    border: none;
+    outline: none;
+    color: rgba(201,168,76,0.9);
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(13px, 3.5vw, 15px);
+    line-height: 1.8;
+    padding: 20px;
+    resize: none;
+    height: 130px;
+    letter-spacing: 0.03em;
+  }
+
+  textarea::placeholder {
+    color: rgba(201,168,76,0.25);
+    font-style: italic;
+  }
+
+  textarea:focus ~ .input-border {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(201,168,76,0.1);
+  }
+
+  /* 버튼 */
+  .ask-btn {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(11px, 3vw, 13px);
+    letter-spacing: 0.4em;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 3s;
+  }
+
+  .ask-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    background: rgba(201,168,76,0.15);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .ask-btn:hover::before { width: 400px; height: 400px; }
+  .ask-btn:hover {
+    box-shadow: 0 0 30px rgba(201,168,76,0.3);
+    text-shadow: 0 0 10px var(--gold);
+  }
+
+  .ask-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* 응답 영역 */
+  .response-wrap {
+    width: 100%;
+    margin-top: 40px;
+    display: none;
+  }
+
+  .response-wrap.visible { display: block; }
+
+  .response-ornament {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .response-ornament span {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 9px;
+    letter-spacing: 0.5em;
+    color: var(--gold-dim);
+  }
+
+  .prophecy-box {
+    position: relative;
+    padding: 32px 28px;
+    background: rgba(10,6,8,0.9);
+    border: 1px solid var(--gold-dim);
+  }
+
+  .prophecy-box::before {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px; right: 4px; bottom: 4px;
+    border: 1px solid rgba(201,168,76,0.15);
+    pointer-events: none;
+  }
+
+  /* 코너 장식 */
+  .corner {
+    position: absolute;
+    width: 16px; height: 16px;
+  }
+  .corner-tl { top: -1px; left: -1px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+  .corner-tr { top: -1px; right: -1px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+  .corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+  .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+
+  .sage-name {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .prophecy-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(16px, 4.5vw, 22px);
+    line-height: 2;
+    color: var(--gold-light);
+    text-align: center;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 20px rgba(201,168,76,0.3);
+    min-height: 60px;
+  }
+
+  .prophecy-text .char {
+    display: inline;
+    opacity: 0;
+    animation: charAppear 0.08s ease forwards;
+  }
+
+  .wisdom-source {
+    margin-top: 20px;
+    text-align: center;
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--gold-dim);
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  .wisdom-source.visible { opacity: 1; }
+
+  /* 로딩 */
+  .loading-wrap {
+    text-align: center;
+    padding: 40px 0;
+    display: none;
+  }
+
+  .loading-wrap.visible { display: block; }
+
+  .loading-rune {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 32px;
+    color: var(--gold);
+    animation: spin 3s linear infinite;
+    display: inline-block;
+    text-shadow: 0 0 20px var(--gold);
+  }
+
+  .loading-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    margin-top: 12px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  /* 하단 */
+  .bottom-ornament {
+    margin-top: 48px;
+    text-align: center;
+    opacity: 0.3;
+  }
+
+  .bottom-ornament span {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: 8px;
+    letter-spacing: 0.5em;
+    color: var(--gold-dim);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes charAppear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+    20% { opacity: 0.6; }
+    80% { opacity: 0.3; }
+    100% { transform: translateY(-80px) translateX(20px); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="container">
+
+  <div class="top-ornament">
+    <svg viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="0" y1="20" x2="80" y2="20" stroke="#7a5f28" stroke-width="0.5"/>
+      <polygon points="100,4 108,20 100,36 92,20" stroke="#c9a84c" stroke-width="1" fill="none"/>
+      <polygon points="100,10 105,20 100,30 95,20" fill="#c9a84c" opacity="0.4"/>
+      <line x1="120" y1="20" x2="200" y2="20" stroke="#7a5f28" stroke-width="0.5"/>
+      <circle cx="40" cy="20" r="2" fill="#7a5f28"/>
+      <circle cx="160" cy="20" r="2" fill="#7a5f28"/>
+    </svg>
+  </div>
+
+  <div class="title-wrap">
+    <div class="title-sage">SAGE</div>
+    <div class="title-sub">현자의 예언서</div>
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-gem"></div>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="invite-text">
+    시대를 초월한 지혜가 이곳에 깃들어 있다<br>
+    <em>그대의 번민을 고하라 — 현자가 길을 보여주리니</em>
+  </div>
+
+  <div class="sages-label">CHOOSE YOUR SAGE</div>
+  <div class="sages-row" id="sagesRow">
+    <div class="sage-chip active" data-sage="all">모든 현자</div>
+    <div class="sage-chip" data-sage="socrates">소크라테스</div>
+    <div class="sage-chip" data-sage="jungYakYong">정약용</div>
+    <div class="sage-chip" data-sage="nietzsche">니체</div>
+    <div class="sage-chip" data-sage="laozi">노자</div>
+    <div class="sage-chip" data-sage="marcus">마르쿠스 아우렐리우스</div>
+    <div class="sage-chip" data-sage="buddha">붓다</div>
+  </div>
+
+  <div class="input-wrap">
+    <textarea id="userInput" placeholder="그대의 고민을 털어놓으라...&#10;인생, 관계, 일, 미래 — 무엇이든 괜찮다"></textarea>
+    <div class="input-border"></div>
+  </div>
+
+  <button class="ask-btn" id="askBtn">✦ 현자에게 묻다 ✦</button>
+
+  <div class="loading-wrap" id="loadingWrap">
+    <div class="loading-rune">✦</div>
+    <div class="loading-text">현자들이 그대의 말을 헤아리는 중</div>
+  </div>
+
+  <div class="response-wrap" id="responseWrap">
+    <div class="response-ornament">
+      <span>— THE PROPHECY —</span>
+    </div>
+    <div class="prophecy-box">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <div class="sage-name" id="sageName"></div>
+      <div class="prophecy-text" id="prophecyText"></div>
+      <div class="wisdom-source" id="wisdomSource"></div>
+    </div>
+  </div>
+
+  <div class="bottom-ornament">
+    <span>✦ SAGE ✦ 지혜는 시간을 초월한다 ✦</span>
+  </div>
+
+</div>
+
+<script>
+// 배경 파티클
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const particles = [];
+for (let i = 0; i < 60; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: Math.random() * 1.5 + 0.5,
+    speedY: -(Math.random() * 0.3 + 0.1),
+    speedX: (Math.random() - 0.5) * 0.2,
+    opacity: Math.random() * 0.5,
+    life: Math.random()
+  });
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.life += 0.003;
+    if (p.life > 1) {
+      p.life = 0;
+      p.x = Math.random() * canvas.width;
+      p.y = canvas.height + 10;
+    }
+    p.x += p.speedX;
+    p.y += p.speedY;
+    const alpha = p.life < 0.2 ? p.life * 5 * p.opacity : p.life > 0.8 ? (1 - p.life) * 5 * p.opacity : p.opacity;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(201,168,76,${alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// 현자 선택
+let selectedSage = 'all';
+document.querySelectorAll('.sage-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.sage-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    selectedSage = chip.dataset.sage;
+  });
+});
+
+const sageNames = {
+  all: '모든 현자들의 목소리',
+  socrates: '소크라테스 (Σωκράτης)',
+  jungYakYong: '정약용 (丁若鏞)',
+  nietzsche: '프리드리히 니체 (Nietzsche)',
+  laozi: '노자 (老子)',
+  marcus: '마르쿠스 아우렐리우스',
+  buddha: '붓다 (Buddha)'
+};
+
+const sageDescriptions = {
+  all: '동서고금 지혜의 정수',
+  socrates: '아테네의 철학자 · 무지의 지혜',
+  jungYakYong: '조선의 실학자 · 실용과 개혁',
+  nietzsche: '독일의 철학자 · 의지와 극복',
+  laozi: '도교의 시조 · 무위자연',
+  marcus: '로마 황제 · 스토아 철학',
+  buddha: '인도의 성자 · 고통과 해탈'
+};
+
+// 글자 하나씩 나타나기
+function typeText(element, text, speed = 80) {
+  element.innerHTML = '';
+  const chars = [...text];
+  chars.forEach((char, i) => {
+    const span = document.createElement('span');
+    span.className = 'char';
+    span.textContent = char;
+    span.style.animationDelay = `${i * speed}ms`;
+    element.appendChild(span);
+  });
+  return chars.length * speed;
+}
+
+// API 호출
+async function askSage() {
+  const input = document.getElementById('userInput').value.trim();
+  if (!input) return;
+
+  const btn = document.getElementById('askBtn');
+  const loadingWrap = document.getElementById('loadingWrap');
+  const responseWrap = document.getElementById('responseWrap');
+
+  btn.disabled = true;
+  responseWrap.classList.remove('visible');
+  loadingWrap.classList.add('visible');
+
+  const sagePersona = selectedSage === 'all'
+    ? '소크라테스, 정약용, 니체, 노자, 마르쿠스 아우렐리우스, 붓다의 지혜를 모두 담은 현자'
+    : sageNames[selectedSage];
+
+  const systemPrompt = `당신은 ${sagePersona}입니다.
+사용자의 고민을 듣고 핵심을 꿰뚫는 한 마디 예언을 내립니다.
+
+규칙:
+- 반드시 한국어로 답하세요
+- 1~3문장, 절대 길게 쓰지 마세요
+- 예언서처럼 묵직하고 함축적으로
+- 직접적인 조언보다 깨달음을 주는 방식으로
+- "~하라", "~이니라", "~리니" 같은 고어체 사용 가능
+- 화려하지 않고 간결하게
+- 마지막에 출처 표시 없이 지혜의 말만`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: input }]
+      })
+    });
+
+    const data = await response.json();
+    const wisdom = data.content[0].text.trim();
+
+    loadingWrap.classList.remove('visible');
+
+    document.getElementById('sageName').textContent = sageNames[selectedSage];
+    const wisdomSource = document.getElementById('wisdomSource');
+    wisdomSource.textContent = `— ${sageDescriptions[selectedSage]} —`;
+    wisdomSource.classList.remove('visible');
+
+    responseWrap.classList.add('visible');
+
+    const duration = typeText(document.getElementById('prophecyText'), wisdom, 70);
+
+    setTimeout(() => {
+      wisdomSource.classList.add('visible');
+    }, duration + 500);
+
+  } catch (err) {
+    loadingWrap.classList.remove('visible');
+    document.getElementById('sageName').textContent = '오류';
+    document.getElementById('prophecyText').textContent = '현자들이 잠시 침묵하고 있습니다. 다시 시도하라.';
+    responseWrap.classList.add('visible');
+  }
+
+  btn.disabled = false;
+}
+
+document.getElementById('askBtn').addEventListener('click', askSage);
+
+document.getElementById('userInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.ctrlKey) askSage();
+});
+</script>
+</body>
+</html>
